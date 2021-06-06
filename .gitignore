@@ -1,0 +1,4 @@
+
+*.blend1
+add-on/__pycache__/
+command-line/__pycache__/

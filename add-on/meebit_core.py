@@ -55,6 +55,17 @@ class VoxelObject:
         if colB == 0:
             return False
         return True
+
+    def splitVoxelObject(self,zIndex):
+        splitVoxels =[]
+        for key in list(self.voxels):
+            voxpos, colorId = self.voxels[key]
+            if(voxpos.z >= zIndex):
+                splitVoxels.append([voxpos.x,voxpos.y,voxpos.z,colorId])
+                del self.voxels[key]
+                # splitVoxels[voxpos._index()] = (voxpos,colorId)
+
+        return VoxelObject(splitVoxels,self.size)
     
     # TODO: Refactor this central method
     def generate(self, file_name, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit):
@@ -684,6 +695,14 @@ def import_meebit_vox(path, options):
         
         collections = (mesh_col, light_col, volume_col)
     
+
+
+
     ### Generate Objects ###
     for model in models.values():
+        if options.optimize_import_for_type == 'Speech':
+            print("Generating separate head model at z-index 51")
+            headModel = model.splitVoxelObject(51)
+            headModel.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)
+
         model.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)

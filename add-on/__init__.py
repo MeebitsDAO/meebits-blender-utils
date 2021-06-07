@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Meebit (.vox)",
     "author": "Dagfinn Parnas based on technistguru/MagicaVoxel_Importer",
-    "version": (0, 9, 1),
+    "version": (0, 9, 4),
     "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "description": "Import Meebit from .vox file",
@@ -73,6 +73,7 @@ class ImportMeebit(Operator, ImportHelper):
                                 items = (
                                     ('Blender', 'Blender scene rendering', "Optimize for blender scene rendering"),
                                     ('VRM', 'VRM export (beta)', "Optimize for 3D avatar for VR in VRM format"),
+                                    ('Speech', 'Speech experiment (beta)', "Speech experiment"),
                                 ),
                                 default = 'Blender')
 

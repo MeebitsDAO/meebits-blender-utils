@@ -7,7 +7,6 @@ import_meebit_vox is the central method which parses the vox files and triggers 
 """
 
 # Developer debug tips. Shift+F4 for python console .  obj = bpy.data.objects['meebit_16734_t'] to get object and experiment on what's possible
-
 import os
 
 import bpy

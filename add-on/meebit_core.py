@@ -67,7 +67,7 @@ class VoxelObject:
         return VoxelObject(splitVoxels,self.size)
     
     # TODO: Refactor this central method
-    def generate(self, file_name, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit):
+    def generate(self, file_name, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False):
         objects = []
         lights = []
         
@@ -256,7 +256,51 @@ class VoxelObject:
         obj.location.y = obj.location.y - 0.25
         #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
 
-        
+        if add_shapekeys_speech:
+            verts = obj.data.vertices
+            # Seems like the first shapekey needs to be a default one which cannot be 
+            sk_default = obj.shape_key_add(name='Default')
+            
+            #Shapekey Up - Straight up translation
+            sk_up = obj.shape_key_add(name='Up',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 6.0
+
+            #Shapekey left - Rotatation on left pivot point
+            sk_left = obj.shape_key_add(name='Left',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_left.data[i].co.x -= 5.0
+                sk_left.data[i].co.z += 3.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['Left']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index
+
+            # Failed pivot point attempt
+            #minX=100
+            #minY=100
+            #minZ=100
+            #for i in range(len(verts)):
+            #    if sk_up.data[i].co.x < minX:
+            #        minX = sk_left.data[i].co.x
+            #    if sk_up.data[i].co.y < minY:
+            #        minY = sk_left.data[i].co.y
+            #    if sk_up.data[i].co.z < minZ:
+            #        minZ = sk_left.data[i].co.z                     
+
+            #print(f'Pivot point ({minX},{minY},{minZ})')
+            # Do rotation in edit mode instead of attemtping matrix multiplications for rotations
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = 0.52, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()
+
+
         if shade_smooth_meebit:
             print("Applying shade smooth")
             # Each faces must be smooth shaded https://blender.stackexchange.com/a/91687
@@ -709,7 +753,7 @@ def import_meebit_vox(path, options):
     for model in models.values():
         if options.optimize_import_for_type == 'Speech':
             print("Generating separate head model at z-index 51")
-            headModel = model.splitVoxelObject(51)
-            headModel.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)
+            headModel = model.splitVoxelObject(50)
+            headModel.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit, add_shapekeys_speech=True)
 
         model.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)

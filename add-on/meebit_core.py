@@ -229,38 +229,33 @@ class VoxelObject:
         
         # Sets the origin of object to be the same as in MagicaVoxel so that its location can be set correctly.
         bpy.context.scene.cursor.location = [0, 0, 0]
-
-        # Meebit - Set location
-        #obj.location = [-self.size.x/2.0, -self.size.y/2.0, -self.size.z/2.0]
-        #obj.location = [-obj.dimensions.x/2.0, -obj.dimensions.y/2.0, -obj.dimensions.z/2.0]
         
         # Meebit - Set origin to prepare for rigging
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
         # bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
         
-        # Meebit - attempt to set location
-        #obj.location.z += vox_size*obj.dimensions.z/2.0
 
         for light in lights:
             light.parent = obj  # Parent Lights to Object
             x, y, z = light.location  # Fix Location
             light.location = [x+int(-self.size.x/2), y+int(-self.size.y/2), z+int(-self.size.z/2)]
         
-        # TODO: Find out why these do not work 
-        print(f'1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        # Meebits location placement and scaling down by vox_size
+        #print(f'1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
         obj.location = [obj.location.x*vox_size,obj.location.y*vox_size,obj.location.z*vox_size]
-        print(f'2 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        #print(f'2 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
         obj.scale=(vox_size,vox_size,vox_size)
-        print(f'3 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        #print(f'3 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        obj.location.x=0.0
         # Dimensions is not updated yet afer scale so we need to multiply with vox_size
-        obj.location.x = obj.location.x - vox_size*obj.dimensions.x/2.0
-        print(f'4 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
-        obj.location.y = obj.location.y - vox_size*obj.dimensions.y/2.0
-        print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        #obj.location.x = obj.location.x - vox_size*obj.dimensions.x/2.0
+        #print(f'4.1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
 
-        # Set scale and position.
-        #bpy.ops.transform.translate(value=(self.position.x*vox_size, self.position.y*vox_size, self.position.z*vox_size))
-        #bpy.ops.transform.resize(value=(vox_size, vox_size, vox_size))
+        #obj.location.y = obj.location.y - vox_size*obj.dimensions.y/2.0
+        # Object dimension for head might be different, so let's hardcode all the things
+        obj.location.y = obj.location.y - 0.25
+        #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+
         
         if shade_smooth_meebit:
             print("Applying shade smooth")

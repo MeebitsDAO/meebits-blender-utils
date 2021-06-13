@@ -259,44 +259,99 @@ class VoxelObject:
         if add_shapekeys_speech:
             verts = obj.data.vertices
             # Seems like the first shapekey needs to be a default one which cannot be 
-            sk_default = obj.shape_key_add(name='Default')
+            sk_default = obj.shape_key_add(name='DEfault')
             
-            #Shapekey Up - Straight up translation
-            sk_up = obj.shape_key_add(name='Up',from_mix=False)
+            #Shapekey rest - Straight up translation
+            sk_up = obj.shape_key_add(name='rest',from_mix=False)
+
+            #Shapekey O - Straight up translation
+            sk_up = obj.shape_key_add(name='O',from_mix=False)
             for i in range(len(verts)):
                 sk_up.data[i].co.z += 6.0
 
+            #Shapekey WQ - Straight up translation
+            sk_up = obj.shape_key_add(name='WQ',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 4.0
+
+            #Shapekey U - Straight up translation
+            sk_up = obj.shape_key_add(name='U',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 5.0 
+
+            #Shapekey L - Straight up translation
+            sk_up = obj.shape_key_add(name='L',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 2.0
+
+            #Shapekey WQ - Straight up translation
+            sk_up = obj.shape_key_add(name='MBP',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 0.5
+
+            #Shapekey FV - Straight up translation
+            sk_up = obj.shape_key_add(name='FV',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 1.5                                                             
+
+
             #Shapekey left - Rotatation on left pivot point
-            sk_left = obj.shape_key_add(name='Left',from_mix=False)
+            sk_left = obj.shape_key_add(name='AI',from_mix=False)
 
             # Couldn't get the center_override to work immediately, so let's just translate a bit
             for i in range(len(verts)):
                 sk_left.data[i].co.x -= 5.0
-                sk_left.data[i].co.z += 3.0
+                sk_left.data[i].co.z += 5.0
 
             # Let's set it to active since we need to update in edit mode
-            shape_key = obj.data.shape_keys.key_blocks['Left']
+            shape_key = obj.data.shape_keys.key_blocks['AI']
             keys = obj.data.shape_keys.key_blocks.keys()
             shape_key_index = keys.index(shape_key.name)
             obj.active_shape_key_index = shape_key_index
 
-            # Failed pivot point attempt
-            #minX=100
-            #minY=100
-            #minZ=100
-            #for i in range(len(verts)):
-            #    if sk_up.data[i].co.x < minX:
-            #        minX = sk_left.data[i].co.x
-            #    if sk_up.data[i].co.y < minY:
-            #        minY = sk_left.data[i].co.y
-            #    if sk_up.data[i].co.z < minZ:
-            #        minZ = sk_left.data[i].co.z                     
-
-            #print(f'Pivot point ({minX},{minY},{minZ})')
-            # Do rotation in edit mode instead of attemtping matrix multiplications for rotations
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.transform.rotate(value = 0.52, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()
+
+            #Shapekey E - Rotatation on right pivot point
+            sk_right = obj.shape_key_add(name='E',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_right.data[i].co.x += 5.0
+                sk_right.data[i].co.z += 5.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['E']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index   
+
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = -0.52, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()         
+
+
+            sk_left = obj.shape_key_add(name='etc',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_left.data[i].co.x -= 5.0
+                sk_left.data[i].co.z += 5.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['etc']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index
+
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = 0.42, orient_axis='Y')
             # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
             bpy.ops.object.editmode_toggle()
 

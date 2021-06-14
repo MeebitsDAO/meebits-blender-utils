@@ -256,10 +256,46 @@ class VoxelObject:
         obj.location.y = obj.location.y - 0.25
         #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
 
+
+        
+        # If we want speech we do the following major steps
+        # 1. Create a new aramature with a bone for each Preston Blair phonemes        
+        # 2. Create shapekeys for each of the Preston Blair phonemes
+        # 3. Make the bones drive the shape key
+        # 4. Create a pose library call Lib_phonemes with a pose x+=1.0 for each of the armature bones
         if add_shapekeys_speech:
+            phoneme_names = ['AI', 'O', 'E', 'U', 'etc', 'L', 'WQ', 'MBP','FV','rest']
+            
+            # From https://pastebin.com/Vs5cAq9S
+            # 1. Create a new aramature with a bone for each Preston Blair phonemes  
+            driver_armature_name = 'Meebit driver speech - ' + file_name
+            driver_armature = bpy.data.armatures.new(driver_armature_name)
+            driver_armature_obj = bpy.data.objects.new(driver_armature_name, driver_armature)
+            bpy.context.collection.objects.link(driver_armature_obj)
+
+
+            # To add bones, we need to select the armature and go into EDIT mode
+            # From https://blender.stackexchange.com/questions/51684/python-create-custom-armature-without-ops
+            bpy.context.view_layer.objects.active = driver_armature_obj
+            # Show the bone names besides them
+            bpy.context.active_object.data.show_names=True
+            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            edit_bones = driver_armature_obj.data.edit_bones
+
+            z_temp = 0.0
+            for bone_name in phoneme_names:
+                b = edit_bones.new(bone_name)
+                b.head = (5.0, 0.0, z_temp)
+                b.tail = (5.0, 0.0, z_temp+0.5)
+                z_temp += 1.0
+
+            # exit edit mode
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            # 2. Create shapekeys for each of the Preston Blair phonemes
             verts = obj.data.vertices
             # Seems like the first shapekey needs to be a default one which cannot be 
-            sk_default = obj.shape_key_add(name='DEfault')
+            sk_default = obj.shape_key_add(name='Default')
             
             #Shapekey rest - Straight up translation
             sk_up = obj.shape_key_add(name='rest',from_mix=False)
@@ -354,6 +390,9 @@ class VoxelObject:
             bpy.ops.transform.rotate(value = 0.42, orient_axis='Y')
             # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
             bpy.ops.object.editmode_toggle()
+
+
+
 
 
         if shade_smooth_meebit:

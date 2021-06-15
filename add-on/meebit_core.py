@@ -279,18 +279,21 @@ class VoxelObject:
             bpy.context.view_layer.objects.active = driver_armature_obj
             # Show the bone names besides them
             bpy.context.active_object.data.show_names=True
-            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            bpy.ops.object.editmode_toggle()
             edit_bones = driver_armature_obj.data.edit_bones
 
             z_temp = 0.0
             for bone_name in phoneme_names:
                 b = edit_bones.new(bone_name)
-                b.head = (5.0, 0.0, z_temp)
-                b.tail = (5.0, 0.0, z_temp+0.5)
-                z_temp += 1.0
+                b.head = (2.5, 0.0, z_temp)
+                b.tail = (2.5, 0.0, z_temp+0.3)
+                z_temp += 0.5
 
             # exit edit mode
-            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.editmode_toggle()
+            # Revert the active object
+            bpy.context.view_layer.objects.active = obj
 
             # 2. Create shapekeys for each of the Preston Blair phonemes
             verts = obj.data.vertices
@@ -389,10 +392,7 @@ class VoxelObject:
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.transform.rotate(value = 0.42, orient_axis='Y')
             # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
-            bpy.ops.object.editmode_toggle()
-
-
-
+            bpy.ops.object.editmode_toggle()          
 
 
         if shade_smooth_meebit:

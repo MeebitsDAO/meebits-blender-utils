@@ -268,7 +268,7 @@ class VoxelObject:
             
             # From https://pastebin.com/Vs5cAq9S
             # 1. Create a new aramature with a bone for each Preston Blair phonemes  
-            driver_armature_name = 'Meebit driver speech - ' + file_name
+            driver_armature_name = 'driver_' + file_name
             driver_armature = bpy.data.armatures.new(driver_armature_name)
             driver_armature_obj = bpy.data.objects.new(driver_armature_name, driver_armature)
             bpy.context.collection.objects.link(driver_armature_obj)
@@ -392,7 +392,22 @@ class VoxelObject:
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.transform.rotate(value = 0.42, orient_axis='Y')
             # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
-            bpy.ops.object.editmode_toggle()          
+            bpy.ops.object.editmode_toggle()
+
+            # Add shape key driver connected to bone with same name
+            # https://blender.stackexchange.com/questions/185362/modify-driver-target-or-any-property
+            for shape_key_name in phoneme_names:
+                shape_key = obj.data.shape_keys.key_blocks[shape_key_name]
+
+                shape_key_driver = shape_key.driver_add('value')
+                driver_variable = shape_key_driver.driver.variables.new()
+                driver_variable.name = 'SpeechDriver'
+                driver_variable.type = 'TRANSFORMS'
+                driver_variable.targets[0].id = driver_armature_obj
+                driver_variable.targets[0].bone_target = shape_key_name
+                driver_variable.targets[0].transform_space = 'LOCAL_SPACE'
+                driver_variable.targets[0].transform_type = 'LOC_X'                
+                      
 
 
         if shade_smooth_meebit:

@@ -400,13 +400,16 @@ class VoxelObject:
                 shape_key = obj.data.shape_keys.key_blocks[shape_key_name]
 
                 shape_key_driver = shape_key.driver_add('value')
+                shape_key_driver.driver.expression  = 'speech_driver_value + 0.0'
                 driver_variable = shape_key_driver.driver.variables.new()
-                driver_variable.name = 'SpeechDriver'
+                driver_variable.name = 'speech_driver_value'
                 driver_variable.type = 'TRANSFORMS'
                 driver_variable.targets[0].id = driver_armature_obj
                 driver_variable.targets[0].bone_target = shape_key_name
                 driver_variable.targets[0].transform_space = 'LOCAL_SPACE'
-                driver_variable.targets[0].transform_type = 'LOC_X'                
+                driver_variable.targets[0].transform_type = 'LOC_X'
+
+                
                       
 
 

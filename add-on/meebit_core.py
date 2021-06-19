@@ -409,8 +409,34 @@ class VoxelObject:
                 driver_variable.targets[0].transform_space = 'LOCAL_SPACE'
                 driver_variable.targets[0].transform_type = 'LOC_X'
 
-                
-                      
+            # Add a PoseLibrary and a pose for each phoneme
+            # Select driver armature and set pose mode
+            bpy.context.view_layer.objects.active = driver_armature_obj
+            bpy.ops.object.mode_set(mode='POSE', toggle=False)
+            bpy.ops.poselib.new()
+            # Create pose library. Add-on for creating key frames is hardcoded to Lib_phonemes pose library
+            driver_armature_obj.pose_library.name = 'Lib_phonemes'
+            
+            # Create a pose for each phoneme
+            for pose_name in phoneme_names:
+                bone = driver_armature_obj.pose.bones[pose_name]
+                bone.head.x = bone.head.x + 1.0
+                bone.tail.x = bone.tail.x + 1.0
+                bpy.ops.pose.select_all(action="TOGGLE")
+                bpy.ops.poselib.pose_add(name=pose_name)
+                bpy.ops.pose.select_all(action="DESELECT")
+
+                # Reset bones
+                bpy.ops.pose.select_all(action="TOGGLE")
+                bpy.ops.pose.rot_clear()
+                bpy.ops.pose.scale_clear()
+                bpy.ops.pose.transforms_clear()
+                bpy.ops.pose.select_all(action="DESELECT")
+            
+
+            # Reset to expected state for rest of code
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.context.view_layer.objects.active = obj
 
 
         if shade_smooth_meebit:

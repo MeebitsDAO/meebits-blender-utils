@@ -415,15 +415,16 @@ class VoxelObject:
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
             bpy.ops.poselib.new()
             # Create pose library. Add-on for creating key frames is hardcoded to Lib_phonemes pose library
-            driver_armature_obj.pose_library.name = 'Lib_phonemes'
+            driver_armature_obj.pose_library.name = 'Lib_Phonemes'
             
+            pose_frame=1
             # Create a pose for each phoneme
             for pose_name in phoneme_names:
                 bone = driver_armature_obj.pose.bones[pose_name]
-                bone.head.x = bone.head.x + 1.0
-                bone.tail.x = bone.tail.x + 1.0
+                bone.location = (bone.location.x+1.0,bone.location.y,bone.location.z)
                 bpy.ops.pose.select_all(action="TOGGLE")
-                bpy.ops.poselib.pose_add(name=pose_name)
+                bpy.ops.poselib.pose_add(frame=1+pose_frame,name=pose_name)
+                pose_frame += 1
                 bpy.ops.pose.select_all(action="DESELECT")
 
                 # Reset bones

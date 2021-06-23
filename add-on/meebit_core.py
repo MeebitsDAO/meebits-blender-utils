@@ -67,7 +67,7 @@ class VoxelObject:
         return VoxelObject(splitVoxels,self.size)
     
     # TODO: Refactor this central method
-    def generate(self, file_name, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False):
+    def generate(self,file_name,model_counter, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False):
         objects = []
         lights = []
         
@@ -246,7 +246,8 @@ class VoxelObject:
         #print(f'2 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
         obj.scale=(vox_size,vox_size,vox_size)
         #print(f'3 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
-        obj.location.x=0.0
+        # model_counter is only non-zero if there are more than model imported
+        obj.location.x=model_counter*2.0
         # Dimensions is not updated yet afer scale so we need to multiply with vox_size
         #obj.location.x = obj.location.x - vox_size*obj.dimensions.x/2.0
         #print(f'4.1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
@@ -286,8 +287,8 @@ class VoxelObject:
             z_temp = 0.0
             for bone_name in phoneme_names:
                 b = edit_bones.new(bone_name)
-                b.head = (2.5, 0.0, z_temp)
-                b.tail = (2.5, 0.0, z_temp+0.3)
+                b.head = (model_counter*2.0+1.0, 0.0, z_temp)
+                b.tail = (model_counter*2.0+1.0, 0.0, z_temp+0.3)
                 z_temp += 0.5
 
             # exit edit mode
@@ -893,6 +894,6 @@ def import_meebit_vox(path, options):
         if options.optimize_import_for_type == 'Speech':
             print("Generating separate head model at z-index 51")
             headModel = model.splitVoxelObject(50)
-            headModel.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit, add_shapekeys_speech=True)
+            headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit, add_shapekeys_speech=True)
 
-        model.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)
+        model.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)

@@ -140,7 +140,9 @@ class ImportMeebit(Operator, ImportHelper):
     organize: BoolProperty(name = "Organize Objects",
                             description = "Organize objects into collections.",
                             default = True)
-    
+    # Not used directly
+    model_counter: FloatProperty(name = "Model counter",
+                                default=0)
 
     def execute(self, context):
         from . import meebit_core
@@ -159,6 +161,7 @@ class ImportMeebit(Operator, ImportHelper):
 
         for path in paths:
             meebit_core.import_meebit_vox(path, self)
+            self.model_counter += 1
         
         return {"FINISHED"}
     

@@ -1,11 +1,11 @@
 """
-This script convert a meebit in vox format to select FBX format.
+This script meebits to a blender scene 
 
 It uses code from the following repo under gpl 3.0 license.
 https://github.com/technistguru/MagicaVoxel_Importer
 
 Usage:
-blender MeebitRig.blend --background --python meebit_export_to_fbx.py -- --meebit E:\meebits\14544\meebit_14544_t.vox
+blender MeebitRig.blend --background --python meebit_export_to_nonvrm.py -- --meebit E:\meebits\14544\meebit_14544_t.vox
 """
 
 # Debug tips. Shift+F4 for python console .  obj = bpy.data.objects['meebit_16734_t'] to get object
@@ -118,5 +118,12 @@ import_meebit_vox(meebitPath,options)
 objects = bpy.context.scene.objects
 
 bpy.ops.object.select_all(action='SELECT')
+print("FBX export")
 exportFilename = Path(meebitPath).stem + '.fbx'
 bpy.ops.export_scene.fbx(filepath=exportFilename, use_selection=True)
+print("Obj export")
+exportFilename = Path(meebitPath).stem + '.obj'
+bpy.ops.export_scene.obj(filepath=exportFilename,use_selection=True)
+print("GLB export")
+exportFilename = Path(meebitPath).stem + '.glb'
+bpy.ops.export_scene.gltf(filepath=exportFilename, export_format='GLB')

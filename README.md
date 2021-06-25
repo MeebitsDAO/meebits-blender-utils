@@ -1,6 +1,7 @@
 # Meebits blender utils
-Blender import add-on for Meebits based on [MagicaVoxel `.vox` format](https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt)
-In addition, batch conversion of Meebits from MagicaVoxel `.vox` format to [VRM format for 3D avatars](https://github.com/vrm-c/vrm-specification/tree/master/specification/VRMC_vrm-1.0_draft) via docker image.
+Blender import add-on for Meebits based on [MagicaVoxel `.vox` format](https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt).
+
+In addition, the project provides conversion from of Meebits from MagicaVoxel `.vox` format to [VRM format for 3D avatars](https://github.com/vrm-c/vrm-specification/tree/master/specification/VRMC_vrm-1.0_draft), GLB, OBJ and FBX format. This is provided both as command-line option (requiring local installation of blender) and as a docker image.
 
 ![image](https://user-images.githubusercontent.com/1133607/118240998-ea5fa780-b49b-11eb-8090-6e48640d2211.png)
 
@@ -40,6 +41,7 @@ The following settings are available:
 Report issues in Github or raise them in the MeebitsDAO discord.
 
 ## Changelog and Versioning
+v0.9.6 - Conversion to FBX, OBJ and GLB formats
 v0.9.2 - Batch conversion to VRM through docker including VRM metadata.
 v0.9.0 - Improved import dialog
 

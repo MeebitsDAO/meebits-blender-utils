@@ -247,7 +247,7 @@ class VoxelObject:
         obj.scale=(vox_size,vox_size,vox_size)
         #print(f'3 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
         # model_counter is only non-zero if there are more than model imported
-        obj.location.x=model_counter*2.0
+        obj.location.x=0
         # Dimensions is not updated yet afer scale so we need to multiply with vox_size
         #obj.location.x = obj.location.x - vox_size*obj.dimensions.x/2.0
         #print(f'4.1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
@@ -264,12 +264,12 @@ class VoxelObject:
         # 2. Create shapekeys for each of the Preston Blair phonemes
         # 3. Make the bones drive the shape key
         # 4. Create a pose library call Lib_phonemes with a pose x+=1.0 for each of the armature bones
+        driver_armature_name = 'driver_' + file_name
         if add_shapekeys_speech:
             phoneme_names = ['AI', 'O', 'E', 'U', 'etc', 'L', 'WQ', 'MBP','FV','rest']
             
             # From https://pastebin.com/Vs5cAq9S
             # 1. Create a new aramature with a bone for each Preston Blair phonemes  
-            driver_armature_name = 'driver_' + file_name
             driver_armature = bpy.data.armatures.new(driver_armature_name)
             driver_armature_obj = bpy.data.objects.new(driver_armature_name, driver_armature)
             bpy.context.collection.objects.link(driver_armature_obj)
@@ -287,8 +287,8 @@ class VoxelObject:
             z_temp = 0.0
             for bone_name in phoneme_names:
                 b = edit_bones.new(bone_name)
-                b.head = (model_counter*2.0+1.0, 0.0, z_temp)
-                b.tail = (model_counter*2.0+1.0, 0.0, z_temp+0.3)
+                b.head = (1.0, 0.0, z_temp)
+                b.tail = (1.0, 0.0, z_temp+0.3)
                 z_temp += 0.5
 
             # exit edit mode
@@ -460,8 +460,18 @@ class VoxelObject:
         if meebit_rig:
             if bpy.data.objects.get("MeebitArmature") is not None:
                 armature = bpy.data.objects['MeebitArmature'] 
+                #TODO: Copy armature
                 print("Found meebit armature 'MeebitArmature'") 
                 
+                if armature.children: 
+                    print("Armature is already bound to another mesh. Creating a clone")
+                    clonedArmature = bpy.data.objects.new('MeebitArmature'+file_name, armature.data)
+                    clonedArmature.location = armature.location
+                    clonedArmature.scale = armature.scale
+                    bpy.data.collections[0].objects.link(clonedArmature)
+                    #From now on the armature refs the clone
+                    armature=clonedArmature
+
                 # Need to do scaling first
                 if scale_meebit_rig:
                     print("Scaling armature to fit meebit dimensions") 
@@ -470,6 +480,7 @@ class VoxelObject:
                     # Convert to world coordinates if you want to use world Y
                     # We now use @ instead of * as per https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Python_API#Matrix_Multiplication
                     objBound = obj.matrix_world.to_quaternion() @ obj.dimensions
+                    #TODO: Crashes with cloned armature at the moment
                     armBound = armature.matrix_world.to_quaternion() @ armature.dimensions
 
                     ratio = abs(objBound.z)/ abs(armBound.z) 
@@ -487,7 +498,27 @@ class VoxelObject:
                 
 
             else:
-                print("Found no meebit armature with name'MeebitArmature'") 
+                print("Found no meebit armature with name'MeebitArmature'")
+        
+        #Finally, let's translate the most recently meebit created a bit to the side if we have more than one
+        if model_counter>0:
+            bpy.ops.object.select_all(action='DESELECT') #deselect all objects
+            # Move through armature if it exist
+            if obj.find_armature():
+                armature = obj.find_armature()
+                armature.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+                #obj.find_armature().location.x=model_counter*2.0
+            else:
+                obj.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+
+            # The armature for speech is not connected to obj, so translate separately
+            if add_shapekeys_speech:
+                bpy.ops.object.select_all(action='DESELECT') #deselect all objects
+                driver_armature = bpy.data.objects[driver_armature_name]
+                driver_armature.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
 
 
 ################################################################################################################################################
@@ -894,6 +925,7 @@ def import_meebit_vox(path, options):
         if options.optimize_import_for_type == 'Speech':
             print("Generating separate head model at z-index 51")
             headModel = model.splitVoxelObject(50)
-            headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit, add_shapekeys_speech=True)
+            # options.join_meebit_armature,options.scale_meebit_armature are both hardcode to false for the head
+            headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, False,False,options.shade_smooth_meebit, add_shapekeys_speech=True)
 
         model.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)

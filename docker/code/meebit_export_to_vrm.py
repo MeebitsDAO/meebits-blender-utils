@@ -131,12 +131,13 @@ bpy.ops.object.select_all(action='SELECT')
 # https://vrm.dev/en/docs/univrm/meta/univrm_meta/
 fileNameNoEnding = (Path(meebitPath).stem)
 
+# Expected value of fileNameNoEnding  = 'meebit_19666_t_solid'
+meebitId = re.search('meebit_([^_]*)',fileNameNoEnding).group(1)
+# Remove leading zeros
+meebitId = meebitId.lstrip('0')
+print(f'Meebit id from filename is {meebitId}')
+
 try:
-    # Expected value of fileNameNoEnding  = 'meebit_19666_t_solid'
-    meebitId = re.search('meebit_([^_]*)',fileNameNoEnding).group(1)
-    # Remove leading zeros
-    meebitId = meebitId.lstrip('0')
-    print(f'Meebit id from filename is {meebitId}')
     # Do screenscraping from ll site for owner wallet
     print(f'Making HTTP request to https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
     response = requests.get(f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
@@ -164,4 +165,15 @@ except Exception as e:
 exportFilename = fileNameNoEnding+ '.vrm'
 bpy.ops.export_scene.vrm('EXEC_DEFAULT', filepath=exportFilename)
 print("Meebit VRM successfully written to " + exportFilename)
+
+try:
+    #Get photo as well
+    print(f'Making HTTP request to https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
+    response = requests.get(f'https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
+    with open(fileNameNoEnding+ '.jpg',"wb") as file:
+        file.write(response.content)
+except Exception as e:
+    print("Failed to set VRM metadata")
+    print(e)
+
 print("Don't forget to follow @MeebitsDAO")

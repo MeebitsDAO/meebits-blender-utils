@@ -9,4 +9,5 @@ do
     mv -f *.fbx output_vrm/
     mv -f *.glb output_vrm/
     mv -f *.mtl output_vrm/
+    mv -f *.jpg output_vrm/
 done

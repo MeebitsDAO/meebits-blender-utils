@@ -1,5 +1,9 @@
 """
-This script meebits to a blender scene 
+This script convert a meebit in vox format to select 3D formats.
+The following formats exported: 
+- FBX
+- OBJ
+- GLB
 
 It uses code from the following repo under gpl 3.0 license.
 https://github.com/technistguru/MagicaVoxel_Importer

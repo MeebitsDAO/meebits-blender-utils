@@ -469,6 +469,8 @@ class VoxelObject:
                     clonedArmature.location = armature.location
                     clonedArmature.scale = armature.scale
                     bpy.data.collections[0].objects.link(clonedArmature)
+                    # Ref https://docs.blender.org/api/current/info_gotcha.html#no-updates-after-setting-values 
+                    bpy.context.view_layer.update()
                     #From now on the armature refs the clone
                     armature=clonedArmature
 

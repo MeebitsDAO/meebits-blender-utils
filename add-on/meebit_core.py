@@ -10,6 +10,7 @@ import_meebit_vox is the central method which parses the vox files and triggers 
 import os
 
 import bpy
+import mathutils
 
 import struct
 
@@ -67,7 +68,7 @@ class VoxelObject:
         return VoxelObject(splitVoxels,self.size)
     
     # TODO: Refactor this central method
-    def generate(self,file_name,model_counter, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False):
+    def generate(self,file_name,model_counter, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False, head=None):
         objects = []
         lights = []
         
@@ -482,8 +483,13 @@ class VoxelObject:
                     # Convert to world coordinates if you want to use world Y
                     # We now use @ instead of * as per https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Python_API#Matrix_Multiplication
                     objBound = obj.matrix_world.to_quaternion() @ obj.dimensions
-                    #TODO: Crashes with cloned armature at the moment
+                    # If head is supplied, we add the height of it
+                    if head:
+                        objDimensionWithHead= mathutils.Vector((obj.dimensions.x,obj.dimensions.y,obj.dimensions.z+ head.dimensions.z))
+                        objBound = obj.matrix_world.to_quaternion() @ objDimensionWithHead
+
                     armBound = armature.matrix_world.to_quaternion() @ armature.dimensions
+
 
                     ratio = abs(objBound.z)/ abs(armBound.z) 
                     print("Scaling armature with ratio:", ratio)
@@ -521,6 +527,9 @@ class VoxelObject:
                 driver_armature = bpy.data.objects[driver_armature_name]
                 driver_armature.select_set(True)
                 bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+        
+        # Finally return the main mesh object
+        return obj
 
 
 ################################################################################################################################################
@@ -878,6 +887,7 @@ def import_meebit_vox(path, options):
                 options.report({"WARNING"}, "MToon_unversioned shader missing. Install VRM add-on from https://github.com/saturday06/VRM_Addon_for_Blender")
                 return {"CANCELLED"}
             pass
+            
         
     
     
@@ -924,10 +934,18 @@ def import_meebit_vox(path, options):
 
     ### Generate Objects ###
     for model in models.values():
+        headMesh = None
         if options.optimize_import_for_type == 'Speech':
             print("Generating separate head model at z-index 51")
             headModel = model.splitVoxelObject(50)
             # options.join_meebit_armature,options.scale_meebit_armature are both hardcode to false for the head
-            headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, False,False,options.shade_smooth_meebit, add_shapekeys_speech=True)
+            headMesh = headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, False,False,options.shade_smooth_meebit, add_shapekeys_speech=True)
 
-        model.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)
+        bodyMesh = model.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit,add_shapekeys_speech=False,head=headMesh)
+        if headMesh:
+            print("Setting parent of head mesh to the body mesh")
+            bpy.ops.object.select_all(action='DESELECT')
+            headMesh.select_set(True)
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
+            bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)

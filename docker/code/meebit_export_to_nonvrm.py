@@ -5,7 +5,7 @@ It uses code from the following repo under gpl 3.0 license.
 https://github.com/technistguru/MagicaVoxel_Importer
 
 Usage:
-blender MeebitRig.blend --background --python meebit_export_to_vrm.py -- --meebit E:\meebits\14544\meebit_14544_t.vox
+blender MeebitRig.blend --background --python meebit_export_to_nonvrm.py -- --meebit E:\meebits\14544\meebit_14544_t.vox
 """
 
 # Debug tips. Shift+F4 for python console .  obj = bpy.data.objects['meebit_16734_t'] to get object
@@ -15,9 +15,6 @@ import sys
 import argparse
 import code
 from pathlib import Path
-
-import requests
-import re
 
 import bpy
 
@@ -86,7 +83,6 @@ class MeebitImportOption(object):
 parser = ArgumentParserForBlender()
 
 
-
 #parser.add_argument("-q", "--quack",
 #                    action="store_true",
 #                    help="Quacks bar times if activated.")
@@ -104,9 +100,7 @@ print(meebitPath)
 
 options=MeebitImportOption()
 options.voxel_size=.025
-options.optimize_import_for_type='VRM'
-#options.material_type='Tex'
-options.mtoon_shader= True
+options.optimize_import_for_type='Blender'
 options.shade_smooth_meebit= True
 options.gamma_correct= True
 options.gamma_value= 2.2
@@ -124,56 +118,12 @@ import_meebit_vox(meebitPath,options)
 objects = bpy.context.scene.objects
 
 bpy.ops.object.select_all(action='SELECT')
-
-
-# Before exporting, let's set the VRM meta information ref 
-# https://github.com/vrm-c/vrm-specification/blob/master/specification/VRMC_vrm-1.0_draft/meta.md
-# https://vrm.dev/en/docs/univrm/meta/univrm_meta/
-fileNameNoEnding = (Path(meebitPath).stem)
-
-# Expected value of fileNameNoEnding  = 'meebit_19666_t_solid'
-meebitId = re.search('meebit_([^_]*)',fileNameNoEnding).group(1)
-# Remove leading zeros
-meebitId = meebitId.lstrip('0')
-print(f'Meebit id from filename is {meebitId}')
-
-try:
-    # Do screenscraping from ll site for owner wallet
-    print(f'Making HTTP request to https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
-    response = requests.get(f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
-    ownerWallet = re.search('account.address=([^"]*)',response.text).group(1)
-
-    # Set these values in blender for the VRM export add-on to include them
-    meebitArmature = bpy.data.objects['MeebitArmature']
-    meebitArmature['version'] = '0.9.3'  # matches the meebit blender add-on version
-    meebitArmature['author'] = ownerWallet # wallet id for the owner when the VRM was created
-    meebitArmature['contactInformation'] = f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}' # To be update to metaverse sign-up info
-    meebitArmature['reference'] = 'https://meebitsdao.world/' # meebits dao promotion
-    meebitArmature['title'] = f'Meebit #{meebitId}' # meebit number reference
-    meebitArmature['otherPermissionUrl'] = f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}'  # meebit url
-    meebitArmature['otherLicenseUrl'] = 'https://meebits.larvalabs.com/meebits/termsandconditions' # meebits terms and conditions
-    # Leave default value of these for now
-    # meebitArmature['allowedUserName': 'OnlyAuthor']
-    # meebitArmature['violentUssageName': 'Disallow']
-    # meebitArmature['sexualUssageName': 'Disallow']
-    # meebitArmature['commercialUssageName': 'Disallow']
-    # meebitArmature['licenseName': 'Redistribution_Prohibited']
-except Exception as e:
-    print("Failed to set VRM metadata")
-    print(e)
-
-exportFilename = fileNameNoEnding+ '.vrm'
-bpy.ops.export_scene.vrm('EXEC_DEFAULT', filepath=exportFilename)
-print("Meebit VRM successfully written to " + exportFilename)
-
-try:
-    #Get photo as well
-    print(f'Making HTTP request to https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
-    response = requests.get(f'https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
-    with open(fileNameNoEnding+ '.jpg',"wb") as file:
-        file.write(response.content)
-except Exception as e:
-    print("Failed to set VRM metadata")
-    print(e)
-
-print("Don't forget to follow @MeebitsDAO")
+print("FBX export")
+exportFilename = Path(meebitPath).stem + '.fbx'
+bpy.ops.export_scene.fbx(filepath=exportFilename, use_selection=True)
+print("Obj export")
+exportFilename = Path(meebitPath).stem + '.obj'
+bpy.ops.export_scene.obj(filepath=exportFilename,use_selection=True)
+print("GLB export")
+exportFilename = Path(meebitPath).stem + '.glb'
+bpy.ops.export_scene.gltf(filepath=exportFilename, export_format='GLB')

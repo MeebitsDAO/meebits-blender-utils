@@ -1,5 +1,5 @@
 """
-This script meebits to a blender scene 
+This script convert a meebit in vox format to select FBX format.
 
 It uses code from the following repo under gpl 3.0 license.
 https://github.com/technistguru/MagicaVoxel_Importer
@@ -100,9 +100,7 @@ print(meebitPath)
 
 options=MeebitImportOption()
 options.voxel_size=.025
-options.optimize_import_for_type='VRM'
-#options.material_type='Tex'
-options.mtoon_shader= True
+options.optimize_import_for_type='Blender'
 options.shade_smooth_meebit= True
 options.gamma_correct= True
 options.gamma_value= 2.2

@@ -3,8 +3,10 @@ Provides access to convert meebits without installing blender locally
 
 Steps: 
 1. Install docker desktop https://docs.docker.com/get-docker/
-1. Create directories containing the meebits to convert and the resulting vrm files C:\meebit_vrm_conversion\input_meebits and C:\meebit_vrm_conversion\output_vrm
-(feel free to change to different folder, but then the docker run command must be updated as well)
+1. Create directories containing the meebits to convert and the resulting vrm files C:\meebit_vrm_conversion\input_meebits and C:\meebit_vrm_conversion\output_vrm   
+Feel free to change to different folder, but then the docker run command must be updated as well.   
+I use `find . -name "*solid.vox" -exec cp {} /mnt/c/meebit_vrm_conversion/input_meebits/ \;` to copy all solid.vox files in subtree of folders to the right directory.
+
 1. Configure docker desktop to give access to files under C:\meebit_vrm_conversion\
 ![image](https://user-images.githubusercontent.com/1133607/120553598-f5ea2280-c3f8-11eb-9505-dc7a080fb048.png)
 
@@ -13,8 +15,10 @@ Steps:
 1.  Build docker image with `docker build -t blender-meebits-v1 .`
 1.  Run the docker image interactively `docker run -v C:\meebit_vrm_conversion\input_meebits:/meebits -v C:\meebit_vrm_conversion\output_vrm:/output_vrm  -it blender-meebits-v1`
 PS make sure the -v volume commands has full paths and not just a relative path
-1.  In the container console, run `./convert_all_meebits.sh"` . Converted .vrm file will end up in the /output_vrm folder mapped to C:\meebit_vrm_conversion\output_vrm
-1.  Exit container console
+1.  In the container console, run `./convert_all_meebits.sh"` . Converted .vrm file will end up in the /output_vrm folder mapped to C:\meebit_vrm_conversion\output_vrm   
+Note: if this fails with `bash: ./convert_all_meebits.sh: /bin/bash^M: bad interpreter: No such file or directory` it's due to conflict between windows and linux file encoding.
+Run `sed -i -e 's/\r$//' convert_all_meebits.sh` and it should be fixed.
+3.  Exit container console
 
 
 ## Useful commands

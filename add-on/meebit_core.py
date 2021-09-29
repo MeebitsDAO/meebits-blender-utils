@@ -14,6 +14,7 @@ import mathutils
 from pathlib import Path
 import glob
 import os.path
+import copy
 
 import struct
 
@@ -573,6 +574,18 @@ def import_meebit_vox_addons(path, bodyMesh,options):
 
     addOnFilter = os.path.join(rootDirectory, fileNameNoEnding + '_addon*.vox')
     print("Looking for add-ons by file filter  " + addOnFilter )
+
+    #Fails with can't pickle ImportMeebit objects for some reason. sigh
+    #addOnOptions=copy.copy(options)
+    #Need to do it more unelegant as I can't be bothered with refactoring the options in a separate struct
+
+    
+    #Always False options for add-ons
+    join_meebit_armature_org_value = options.join_meebit_armature
+    scale_meebit_armature_org_value = options.scale_meebit_armature
+    options.join_meebit_armature=False
+    options.scale_meebit_armature= False
+
     for addonFile in glob.glob (addOnFilter):
         print("Processing add-on file " + addonFile )
         addonMesh = import_meebit_vox(addonFile,options)
@@ -581,6 +594,9 @@ def import_meebit_vox_addons(path, bodyMesh,options):
         bodyMesh.select_set(True)
         bpy.context.view_layer.objects.active = bodyMesh
         bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+    options.join_meebit_armature=join_meebit_armature_org_value
+    options.scale_meebit_armature= scale_meebit_armature_org_value
 
 
 def import_meebit_vox(path, options):

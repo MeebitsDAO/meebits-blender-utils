@@ -11,6 +11,9 @@ import os
 
 import bpy
 import mathutils
+from pathlib import Path
+import glob
+import os.path
 
 import struct
 
@@ -564,6 +567,22 @@ def read_dict(content):
     
     return dict
 
+def import_meebit_vox_addons(path, bodyMesh,options):
+    fileNameNoEnding = (Path(path).stem)
+    rootDirectory = Path(path).parent
+
+    addOnFilter = os.path.join(rootDirectory, fileNameNoEnding + '_addon*.vox')
+    print("Looking for add-ons by file filter  " + addOnFilter )
+    for addonFile in glob.glob (addOnFilter):
+        print("Processing add-on file " + addonFile )
+        addonMesh = import_meebit_vox(addonFile,options)
+        bpy.ops.object.select_all(action='DESELECT')
+        addonMesh.select_set(True)
+        bodyMesh.select_set(True)
+        bpy.context.view_layer.objects.active = bodyMesh
+        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+
 def import_meebit_vox(path, options):
     
     if options.optimize_import_for_type == 'Blender':
@@ -949,3 +968,5 @@ def import_meebit_vox(path, options):
             bodyMesh.select_set(True)
             bpy.context.view_layer.objects.active = bodyMesh
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+    return bodyMesh

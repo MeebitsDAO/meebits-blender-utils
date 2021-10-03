@@ -593,7 +593,25 @@ def import_meebit_vox_addons(path, bodyMesh,options):
         addonMesh.select_set(True)
         bodyMesh.select_set(True)
         bpy.context.view_layer.objects.active = bodyMesh
-        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+        bpy.ops.object.join()
+
+        #Let's recalcualte the weights for a single bone
+        bpy.ops.object.select_all(action='DESELECT')
+        #Select armature
+        armature =  bpy.data.objects['MeebitArmature']
+        armature.select_set(True)
+        #Select single bone
+        headBone = armature.data.bones['HeadBone']
+        headBone.select=True 
+        #Select mesh
+        bodyMesh.select_set(True)
+        #Trigger weight paint mode
+        bpy.ops.paint.weight_paint_toggle()
+        #Trigger udating of weights
+        bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
+        
+        #Reset to object mode
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
     options.join_meebit_armature=join_meebit_armature_org_value
     options.scale_meebit_armature= scale_meebit_armature_org_value

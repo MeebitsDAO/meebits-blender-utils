@@ -595,23 +595,32 @@ def import_meebit_vox_addons(path, bodyMesh,options):
         bpy.context.view_layer.objects.active = bodyMesh
         bpy.ops.object.join()
 
-        #Let's recalcualte the weights for a single bone
-        bpy.ops.object.select_all(action='DESELECT')
-        #Select armature
-        armature =  bpy.data.objects['MeebitArmature']
-        armature.select_set(True)
-        #Select single bone
-        headBone = armature.data.bones['HeadBone']
-        headBone.select=True 
-        #Select mesh
-        bodyMesh.select_set(True)
-        #Trigger weight paint mode
-        bpy.ops.paint.weight_paint_toggle()
-        #Trigger udating of weights
-        bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
-        
-        #Reset to object mode
-        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        # Only execute if there is an armature as parent to the body mesh
+        if bodyMesh.parent:
+            print("Found armature for bodyMesh. Proceeding with weight painting update")
+            #Let's recalcualte the weights for a single bone
+            bpy.ops.object.select_all(action='DESELECT')
+            #Select armature
+            armature =  bodyMesh.parent
+            armature.select_set(True)
+            #Select single bone
+            if armature.data.bones.get('HeadBone'):
+                print("Found HeadBone and will update weight painting for only this bone")
+                headBone = armature.data.bones['HeadBone']
+                headBone.select=True 
+                #Select mesh
+                bodyMesh.select_set(True)
+                #Trigger weight paint mode
+                bpy.ops.paint.weight_paint_toggle()
+                #Trigger udating of weights
+                bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
+                
+                #Reset to object mode
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            else:
+                print("Found no bone with name HeadBone, so update of weight painting is unsuccessul")
+        else:
+            print("Found no armature for bodyMesh, so skipping weight painting for single bone")
 
     options.join_meebit_armature=join_meebit_armature_org_value
     options.scale_meebit_armature= scale_meebit_armature_org_value

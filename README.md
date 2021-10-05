@@ -43,6 +43,17 @@ The following settings are available:
 - *Shade smooth*: Improve shading of model
 - *Override materials if they exist*: The VRM Export creates a couple of materials which are named based on the original file name of the import. This option overrides the materials if they already exist in the blender scene.
 
+### Add-on files
+A common issue when rigging a Meebit with an armature, is that arm bones affect parts of the head such as the hair. 
+![xN9gwWL](https://user-images.githubusercontent.com/1133607/136090769-7378da65-2a86-4431-8246-9e2fff8ce7e4.gif)
+
+
+In order to mitigate this issue this, we support import of the Meebit in a two-step approach: 
+
+First import the main part of the Meebit without hair or head accessories. This is rigged with all bones of the armature
+
+Second, import the add-ons (ie. hair or head accessories) and join their meshes to the main part. In addition, we'll look for a bone called HeadBone and only for this bone recalculate how moving the bone affects the Meebit as a whole. This ensure the arm bones will not affect the add-ons.
+
 ## Questions and Concerns
 Report issues in Github or raise them in the MeebitsDAO discord.
 

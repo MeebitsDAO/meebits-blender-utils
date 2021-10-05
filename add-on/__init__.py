@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Meebit (.vox)",
     "author": "Dagfinn Parnas based on technistguru/MagicaVoxel_Importer",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "description": "Import Meebit from .vox file",
@@ -160,7 +160,9 @@ class ImportMeebit(Operator, ImportHelper):
         
 
         for path in paths:
-            meebit_core.import_meebit_vox(path, self)
+            bodyMesh = meebit_core.import_meebit_vox(path, self)
+            # Import add-ons if there exists file matching <filename>_addon<*>.vox
+            meebit_core.import_meebit_vox_addons(path,bodyMesh,self)
             self.model_counter += 1
         
         return {"FINISHED"}

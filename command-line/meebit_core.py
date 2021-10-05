@@ -7,10 +7,14 @@ import_meebit_vox is the central method which parses the vox files and triggers 
 """
 
 # Developer debug tips. Shift+F4 for python console .  obj = bpy.data.objects['meebit_16734_t'] to get object and experiment on what's possible
-
 import os
 
 import bpy
+import mathutils
+from pathlib import Path
+import glob
+import os.path
+import copy
 
 import struct
 
@@ -55,9 +59,20 @@ class VoxelObject:
         if colB == 0:
             return False
         return True
+
+    def splitVoxelObject(self,zIndex):
+        splitVoxels =[]
+        for key in list(self.voxels):
+            voxpos, colorId = self.voxels[key]
+            if(voxpos.z >= zIndex):
+                splitVoxels.append([voxpos.x,voxpos.y,voxpos.z,colorId])
+                del self.voxels[key]
+                # splitVoxels[voxpos._index()] = (voxpos,colorId)
+
+        return VoxelObject(splitVoxels,self.size)
     
     # TODO: Refactor this central method
-    def generate(self, file_name, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit):
+    def generate(self,file_name,model_counter, vox_size, material_type, palette, materials, cleanup, collections,meebit_rig,scale_meebit_rig,shade_smooth_meebit, add_shapekeys_speech=False, head=None):
         objects = []
         lights = []
         
@@ -219,26 +234,218 @@ class VoxelObject:
         
         # Sets the origin of object to be the same as in MagicaVoxel so that its location can be set correctly.
         bpy.context.scene.cursor.location = [0, 0, 0]
-
-        # Meebit - Set location
-        obj.location = [-self.size.x/2.0, -self.size.y/2.0, -self.size.z/2.0]
         
         # Meebit - Set origin to prepare for rigging
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
         # bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
         
-        # Meebit - attempt to set location
-        obj.location.z += vox_size*obj.dimensions.z/2.0
 
         for light in lights:
             light.parent = obj  # Parent Lights to Object
             x, y, z = light.location  # Fix Location
             light.location = [x+int(-self.size.x/2), y+int(-self.size.y/2), z+int(-self.size.z/2)]
         
-        # Set scale and position.
-        bpy.ops.transform.translate(value=(self.position.x*vox_size, self.position.y*vox_size, self.position.z*vox_size))
-        bpy.ops.transform.resize(value=(vox_size, vox_size, vox_size))
+        # Meebits location placement and scaling down by vox_size
+        #print(f'1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        obj.location = [obj.location.x*vox_size,obj.location.y*vox_size,obj.location.z*vox_size]
+        #print(f'2 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        obj.scale=(vox_size,vox_size,vox_size)
+        #print(f'3 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+        # model_counter is only non-zero if there are more than model imported
+        obj.location.x=0
+        # Dimensions is not updated yet afer scale so we need to multiply with vox_size
+        #obj.location.x = obj.location.x - vox_size*obj.dimensions.x/2.0
+        #print(f'4.1 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+
+        #obj.location.y = obj.location.y - vox_size*obj.dimensions.y/2.0
+        # Object dimension for head might be different, so let's hardcode all the things
+        obj.location.y = obj.location.y - 0.25
+        #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
+
+
         
+        # If we want speech we do the following major steps
+        # 1. Create a new aramature with a bone for each Preston Blair phonemes        
+        # 2. Create shapekeys for each of the Preston Blair phonemes
+        # 3. Make the bones drive the shape key
+        # 4. Create a pose library call Lib_phonemes with a pose x+=1.0 for each of the armature bones
+        driver_armature_name = 'driver_' + file_name
+        if add_shapekeys_speech:
+            phoneme_names = ['AI', 'O', 'E', 'U', 'etc', 'L', 'WQ', 'MBP','FV','rest']
+            
+            # From https://pastebin.com/Vs5cAq9S
+            # 1. Create a new aramature with a bone for each Preston Blair phonemes  
+            driver_armature = bpy.data.armatures.new(driver_armature_name)
+            driver_armature_obj = bpy.data.objects.new(driver_armature_name, driver_armature)
+            bpy.context.collection.objects.link(driver_armature_obj)
+
+
+            # To add bones, we need to select the armature and go into EDIT mode
+            # From https://blender.stackexchange.com/questions/51684/python-create-custom-armature-without-ops
+            bpy.context.view_layer.objects.active = driver_armature_obj
+            # Show the bone names besides them
+            bpy.context.active_object.data.show_names=True
+            #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            bpy.ops.object.editmode_toggle()
+            edit_bones = driver_armature_obj.data.edit_bones
+
+            z_temp = 0.0
+            for bone_name in phoneme_names:
+                b = edit_bones.new(bone_name)
+                b.head = (1.0, 0.0, z_temp)
+                b.tail = (1.0, 0.0, z_temp+0.3)
+                z_temp += 0.5
+
+            # exit edit mode
+            bpy.ops.object.editmode_toggle()
+            # Revert the active object
+            bpy.context.view_layer.objects.active = obj
+
+            # 2. Create shapekeys for each of the Preston Blair phonemes
+            verts = obj.data.vertices
+            # Seems like the first shapekey needs to be a default one which cannot be 
+            sk_default = obj.shape_key_add(name='Default')
+            
+            #Shapekey rest - Straight up translation
+            sk_up = obj.shape_key_add(name='rest',from_mix=False)
+
+            #Shapekey O - Straight up translation
+            sk_up = obj.shape_key_add(name='O',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 6.0
+
+            #Shapekey WQ - Straight up translation
+            sk_up = obj.shape_key_add(name='WQ',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 4.0
+
+            #Shapekey U - Straight up translation
+            sk_up = obj.shape_key_add(name='U',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 5.0 
+
+            #Shapekey L - Straight up translation
+            sk_up = obj.shape_key_add(name='L',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 2.0
+
+            #Shapekey WQ - Straight up translation
+            sk_up = obj.shape_key_add(name='MBP',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 0.5
+
+            #Shapekey FV - Straight up translation
+            sk_up = obj.shape_key_add(name='FV',from_mix=False)
+            for i in range(len(verts)):
+                sk_up.data[i].co.z += 1.5                                                             
+
+
+            #Shapekey left - Rotatation on left pivot point
+            sk_left = obj.shape_key_add(name='AI',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_left.data[i].co.x -= 5.0
+                sk_left.data[i].co.z += 5.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['AI']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index
+
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = 0.52, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()
+
+            #Shapekey E - Rotatation on right pivot point
+            sk_right = obj.shape_key_add(name='E',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_right.data[i].co.x += 5.0
+                sk_right.data[i].co.z += 5.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['E']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index   
+
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = -0.52, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()         
+
+
+            sk_left = obj.shape_key_add(name='etc',from_mix=False)
+
+            # Couldn't get the center_override to work immediately, so let's just translate a bit
+            for i in range(len(verts)):
+                sk_left.data[i].co.x -= 5.0
+                sk_left.data[i].co.z += 5.0
+
+            # Let's set it to active since we need to update in edit mode
+            shape_key = obj.data.shape_keys.key_blocks['etc']
+            keys = obj.data.shape_keys.key_blocks.keys()
+            shape_key_index = keys.index(shape_key.name)
+            obj.active_shape_key_index = shape_key_index
+
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.transform.rotate(value = 0.42, orient_axis='Y')
+            # bpy.ops.transform.rotate(value = 0.52, orient_axis='Y',center_override=(minX,minY,minZ))            
+            bpy.ops.object.editmode_toggle()
+
+            # Add shape key driver connected to bone with same name
+            # https://blender.stackexchange.com/questions/185362/modify-driver-target-or-any-property
+            for shape_key_name in phoneme_names:
+                shape_key = obj.data.shape_keys.key_blocks[shape_key_name]
+
+                shape_key_driver = shape_key.driver_add('value')
+                shape_key_driver.driver.expression  = 'speech_driver_value + 0.0'
+                driver_variable = shape_key_driver.driver.variables.new()
+                driver_variable.name = 'speech_driver_value'
+                driver_variable.type = 'TRANSFORMS'
+                driver_variable.targets[0].id = driver_armature_obj
+                driver_variable.targets[0].bone_target = shape_key_name
+                driver_variable.targets[0].transform_space = 'LOCAL_SPACE'
+                driver_variable.targets[0].transform_type = 'LOC_X'
+
+            # Add a PoseLibrary and a pose for each phoneme
+            # Select driver armature and set pose mode
+            bpy.context.view_layer.objects.active = driver_armature_obj
+            bpy.ops.object.mode_set(mode='POSE', toggle=False)
+            bpy.ops.poselib.new()
+            # Create pose library. Add-on for creating key frames is hardcoded to Lib_phonemes pose library
+            driver_armature_obj.pose_library.name = 'Lib_Phonemes'
+            
+            pose_frame=1
+            # Create a pose for each phoneme
+            for pose_name in phoneme_names:
+                bone = driver_armature_obj.pose.bones[pose_name]
+                bone.location = (bone.location.x+1.0,bone.location.y,bone.location.z)
+                bpy.ops.pose.select_all(action="TOGGLE")
+                bpy.ops.poselib.pose_add(frame=1+pose_frame,name=pose_name)
+                pose_frame += 1
+                bpy.ops.pose.select_all(action="DESELECT")
+
+                # Reset bones
+                bpy.ops.pose.select_all(action="TOGGLE")
+                bpy.ops.pose.rot_clear()
+                bpy.ops.pose.scale_clear()
+                bpy.ops.pose.transforms_clear()
+                bpy.ops.pose.select_all(action="DESELECT")
+            
+
+            # Reset to expected state for rest of code
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.context.view_layer.objects.active = obj
+
+
         if shade_smooth_meebit:
             print("Applying shade smooth")
             # Each faces must be smooth shaded https://blender.stackexchange.com/a/91687
@@ -258,8 +465,20 @@ class VoxelObject:
         if meebit_rig:
             if bpy.data.objects.get("MeebitArmature") is not None:
                 armature = bpy.data.objects['MeebitArmature'] 
+                #TODO: Copy armature
                 print("Found meebit armature 'MeebitArmature'") 
                 
+                if armature.children: 
+                    print("Armature is already bound to another mesh. Creating a clone")
+                    clonedArmature = bpy.data.objects.new('MeebitArmature'+file_name, armature.data)
+                    clonedArmature.location = armature.location
+                    clonedArmature.scale = armature.scale
+                    bpy.data.collections[0].objects.link(clonedArmature)
+                    # Ref https://docs.blender.org/api/current/info_gotcha.html#no-updates-after-setting-values 
+                    bpy.context.view_layer.update()
+                    #From now on the armature refs the clone
+                    armature=clonedArmature
+
                 # Need to do scaling first
                 if scale_meebit_rig:
                     print("Scaling armature to fit meebit dimensions") 
@@ -268,7 +487,13 @@ class VoxelObject:
                     # Convert to world coordinates if you want to use world Y
                     # We now use @ instead of * as per https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Python_API#Matrix_Multiplication
                     objBound = obj.matrix_world.to_quaternion() @ obj.dimensions
+                    # If head is supplied, we add the height of it
+                    if head:
+                        objDimensionWithHead= mathutils.Vector((obj.dimensions.x,obj.dimensions.y,obj.dimensions.z+ head.dimensions.z))
+                        objBound = obj.matrix_world.to_quaternion() @ objDimensionWithHead
+
                     armBound = armature.matrix_world.to_quaternion() @ armature.dimensions
+
 
                     ratio = abs(objBound.z)/ abs(armBound.z) 
                     print("Scaling armature with ratio:", ratio)
@@ -285,7 +510,30 @@ class VoxelObject:
                 
 
             else:
-                print("Found no meebit armature with name'MeebitArmature'") 
+                print("Found no meebit armature with name'MeebitArmature'")
+        
+        #Finally, let's translate the most recently meebit created a bit to the side if we have more than one
+        if model_counter>0:
+            bpy.ops.object.select_all(action='DESELECT') #deselect all objects
+            # Move through armature if it exist
+            if obj.find_armature():
+                armature = obj.find_armature()
+                armature.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+                #obj.find_armature().location.x=model_counter*2.0
+            else:
+                obj.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+
+            # The armature for speech is not connected to obj, so translate separately
+            if add_shapekeys_speech:
+                bpy.ops.object.select_all(action='DESELECT') #deselect all objects
+                driver_armature = bpy.data.objects[driver_armature_name]
+                driver_armature.select_set(True)
+                bpy.ops.transform.transform(mode='TRANSLATION', value=(model_counter*2.0,0,0,0),orient_axis='X')
+        
+        # Finally return the main mesh object
+        return obj
 
 
 ################################################################################################################################################
@@ -319,6 +567,64 @@ def read_dict(content):
         dict[key] = value
     
     return dict
+
+def import_meebit_vox_addons(path, bodyMesh,options):
+    fileNameNoEnding = (Path(path).stem)
+    rootDirectory = Path(path).parent
+
+    addOnFilter = os.path.join(rootDirectory, fileNameNoEnding + '_addon*.vox')
+    print("Looking for add-ons by file filter  " + addOnFilter )
+
+    #Fails with can't pickle ImportMeebit objects for some reason. sigh
+    #addOnOptions=copy.copy(options)
+    #Need to do it more unelegant as I can't be bothered with refactoring the options in a separate struct
+
+    
+    #Always False options for add-ons
+    join_meebit_armature_org_value = options.join_meebit_armature
+    scale_meebit_armature_org_value = options.scale_meebit_armature
+    options.join_meebit_armature=False
+    options.scale_meebit_armature= False
+
+    for addonFile in glob.glob (addOnFilter):
+        print("Processing add-on file " + addonFile )
+        addonMesh = import_meebit_vox(addonFile,options)
+        bpy.ops.object.select_all(action='DESELECT')
+        addonMesh.select_set(True)
+        bodyMesh.select_set(True)
+        bpy.context.view_layer.objects.active = bodyMesh
+        bpy.ops.object.join()
+
+        # Only execute if there is an armature as parent to the body mesh
+        if bodyMesh.parent:
+            print("Found armature for bodyMesh. Proceeding with weight painting update")
+            #Let's recalcualte the weights for a single bone
+            bpy.ops.object.select_all(action='DESELECT')
+            #Select armature
+            armature =  bodyMesh.parent
+            armature.select_set(True)
+            #Select single bone
+            if armature.data.bones.get('HeadBone'):
+                print("Found HeadBone and will update weight painting for only this bone")
+                headBone = armature.data.bones['HeadBone']
+                headBone.select=True 
+                #Select mesh
+                bodyMesh.select_set(True)
+                #Trigger weight paint mode
+                bpy.ops.paint.weight_paint_toggle()
+                #Trigger udating of weights
+                bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
+                
+                #Reset to object mode
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            else:
+                print("Found no bone with name HeadBone, so update of weight painting is unsuccessul")
+        else:
+            print("Found no armature for bodyMesh, so skipping weight painting for single bone")
+
+    options.join_meebit_armature=join_meebit_armature_org_value
+    options.scale_meebit_armature= scale_meebit_armature_org_value
+
 
 def import_meebit_vox(path, options):
     
@@ -643,6 +949,7 @@ def import_meebit_vox(path, options):
                 options.report({"WARNING"}, "MToon_unversioned shader missing. Install VRM add-on from https://github.com/saturday06/VRM_Addon_for_Blender")
                 return {"CANCELLED"}
             pass
+            
         
     
     
@@ -684,6 +991,25 @@ def import_meebit_vox(path, options):
         
         collections = (mesh_col, light_col, volume_col)
     
+
+
+
     ### Generate Objects ###
     for model in models.values():
-        model.generate(file_name, options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit)
+        headMesh = None
+        if options.optimize_import_for_type == 'Speech':
+            print("Generating separate head model at z-index 51")
+            headModel = model.splitVoxelObject(50)
+            # options.join_meebit_armature,options.scale_meebit_armature are both hardcode to false for the head
+            headMesh = headModel.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, False,False,options.shade_smooth_meebit, add_shapekeys_speech=True)
+
+        bodyMesh = model.generate(file_name, options.model_counter,options.voxel_size, options.material_type, palette, materials, options.cleanup_mesh, collections, options.join_meebit_armature,options.scale_meebit_armature,options.shade_smooth_meebit,add_shapekeys_speech=False,head=headMesh)
+        if headMesh:
+            print("Setting parent of head mesh to the body mesh")
+            bpy.ops.object.select_all(action='DESELECT')
+            headMesh.select_set(True)
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
+            bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+    return bodyMesh

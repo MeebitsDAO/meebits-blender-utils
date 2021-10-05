@@ -11,6 +11,10 @@ import os
 
 import bpy
 import mathutils
+from pathlib import Path
+import glob
+import os.path
+import copy
 
 import struct
 
@@ -564,6 +568,64 @@ def read_dict(content):
     
     return dict
 
+def import_meebit_vox_addons(path, bodyMesh,options):
+    fileNameNoEnding = (Path(path).stem)
+    rootDirectory = Path(path).parent
+
+    addOnFilter = os.path.join(rootDirectory, fileNameNoEnding + '_addon*.vox')
+    print("Looking for add-ons by file filter  " + addOnFilter )
+
+    #Fails with can't pickle ImportMeebit objects for some reason. sigh
+    #addOnOptions=copy.copy(options)
+    #Need to do it more unelegant as I can't be bothered with refactoring the options in a separate struct
+
+    
+    #Always False options for add-ons
+    join_meebit_armature_org_value = options.join_meebit_armature
+    scale_meebit_armature_org_value = options.scale_meebit_armature
+    options.join_meebit_armature=False
+    options.scale_meebit_armature= False
+
+    for addonFile in glob.glob (addOnFilter):
+        print("Processing add-on file " + addonFile )
+        addonMesh = import_meebit_vox(addonFile,options)
+        bpy.ops.object.select_all(action='DESELECT')
+        addonMesh.select_set(True)
+        bodyMesh.select_set(True)
+        bpy.context.view_layer.objects.active = bodyMesh
+        bpy.ops.object.join()
+
+        # Only execute if there is an armature as parent to the body mesh
+        if bodyMesh.parent:
+            print("Found armature for bodyMesh. Proceeding with weight painting update")
+            #Let's recalcualte the weights for a single bone
+            bpy.ops.object.select_all(action='DESELECT')
+            #Select armature
+            armature =  bodyMesh.parent
+            armature.select_set(True)
+            #Select single bone
+            if armature.data.bones.get('HeadBone'):
+                print("Found HeadBone and will update weight painting for only this bone")
+                headBone = armature.data.bones['HeadBone']
+                headBone.select=True 
+                #Select mesh
+                bodyMesh.select_set(True)
+                #Trigger weight paint mode
+                bpy.ops.paint.weight_paint_toggle()
+                #Trigger udating of weights
+                bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
+                
+                #Reset to object mode
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            else:
+                print("Found no bone with name HeadBone, so update of weight painting is unsuccessul")
+        else:
+            print("Found no armature for bodyMesh, so skipping weight painting for single bone")
+
+    options.join_meebit_armature=join_meebit_armature_org_value
+    options.scale_meebit_armature= scale_meebit_armature_org_value
+
+
 def import_meebit_vox(path, options):
     
     if options.optimize_import_for_type == 'Blender':
@@ -949,3 +1011,5 @@ def import_meebit_vox(path, options):
             bodyMesh.select_set(True)
             bpy.context.view_layer.objects.active = bodyMesh
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+    return bodyMesh

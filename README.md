@@ -54,6 +54,8 @@ First import the main part of the Meebit without hair or head accessories. This 
 
 Second, import the add-ons (ie. hair or head accessories) and join their meshes to the main part. In addition, we'll look for a bone called HeadBone and only for this bone recalculate how moving the bone affects the Meebit as a whole. This ensure the arm bones will not affect the add-ons.
 
+The filename of the add-ons follow a special syntax. If the main part has filename 'meebit_19666_t_solid.vox', the add-ons must be named 'meebit_19666_t_solid_addon*.vox' (where the star is wildcard for example _hair).
+
 ## Questions and Concerns
 Report issues in Github or raise them in the MeebitsDAO discord.
 

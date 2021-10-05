@@ -35,7 +35,7 @@ if blend_dir not in sys.path:
 # Dev tips - Trigger interactive console 
 #code.interact(local=locals())
 
-from meebit_core import import_meebit_vox
+from meebit_core import import_meebit_vox,import_meebit_vox_addons
 
 
 # Argument parser from https://blender.stackexchange.com/a/6844
@@ -118,7 +118,9 @@ options.scale_meebit_armature= True
 options.organize=True
 options.create_volume=False
 
-import_meebit_vox(meebitPath,options)
+bodyMesh = import_meebit_vox(meebitPath,options)
+# Import add-ons if there exists file matching <filename>_addon<*>.vox
+import_meebit_vox_addons(meebitPath,bodyMesh,options)
 
 # Attempt to export all objects
 objects = bpy.context.scene.objects

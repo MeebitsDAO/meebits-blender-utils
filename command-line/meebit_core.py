@@ -259,6 +259,7 @@ class VoxelObject:
 
         #obj.location.y = obj.location.y - vox_size*obj.dimensions.y/2.0
         # Object dimension for head might be different, so let's hardcode all the things
+        #TODO: Will likely impact t-pose
         obj.location.y = obj.location.y - 0.25
         #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
 
@@ -589,6 +590,20 @@ def import_meebit_vox_addons(path, bodyMesh,options):
     for addonFile in glob.glob (addOnFilter):
         print("Processing add-on file " + addonFile )
         addonMesh = import_meebit_vox(addonFile,options)
+
+        # Before joining, we need to make sure there is no overlapping voxels.
+        # We do this by creating a boolean modifier with the add-on
+        bodyMesh= bpy.data.objects['00001_MALE_BODY_VRM']
+        bodyMesh.select_set(True)
+        bpy.context.view_layer.objects.active = bodyMesh
+        addonMesh= bpy.data.objects['00001_MALE_BODY_VRM_addon_head']
+        addonMesh.select_set(False)
+        booleanModifier = bodyMesh.modifiers.new(name='booly_'+addonMesh.name, type='BOOLEAN')
+        booleanModifier.object = addonMesh
+        booleanModifier.operation = 'DIFFERENCE'
+        bpy.ops.object.modifier_apply(modifier=booleanModifier.name)
+
+        # Do the join
         bpy.ops.object.select_all(action='DESELECT')
         addonMesh.select_set(True)
         bodyMesh.select_set(True)
@@ -618,9 +633,9 @@ def import_meebit_vox_addons(path, bodyMesh,options):
                 #Reset to object mode
                 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
             else:
-                print("Found no bone with name HeadBone, so update of weight painting is unsuccessul")
+                print("Found no bone with name HeadBone, so update of weight painting is unsuccessul") 
         else:
-            print("Found no armature for bodyMesh, so skipping weight painting for single bone")
+            print("Found no armature for bodyMesh, so skipping weight painting for single bone") 
 
     options.join_meebit_armature=join_meebit_armature_org_value
     options.scale_meebit_armature= scale_meebit_armature_org_value

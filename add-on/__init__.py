@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Meebit (.vox)",
     "author": "Dagfinn Parnas based on technistguru/MagicaVoxel_Importer",
-    "version": (1, 1, 0),
+    "version": (1, 1, 1),
     "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "description": "Import Meebit from .vox file",

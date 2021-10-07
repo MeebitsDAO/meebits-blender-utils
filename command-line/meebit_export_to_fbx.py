@@ -111,6 +111,7 @@ options.join_meebit_armature=True
 options.scale_meebit_armature= True
 options.organize=True
 options.create_volume=False
+options.model_counter=0
 
 bodyMesh = import_meebit_vox(meebitPath,options)
 # Import add-ons if there exists file matching <filename>_addon<*>.vox

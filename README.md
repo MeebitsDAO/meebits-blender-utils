@@ -60,10 +60,17 @@ The filename of the add-ons follow a special syntax. If the main part has filena
 Report issues in Github or raise them in the MeebitsDAO discord.
 
 ## Changelog and Versioning
+v1.1.1 - Add-on vox import support
+
 v0.9.6 - Conversion to FBX, OBJ and GLB formats
+
 v0.9.2 - Batch conversion to VRM through docker including VRM metadata.
+
 v0.9.0 - Improved import dialog
 
+
 ## License
-This project would not be possible without [saturday06/VRM_Addon_for_Blender](https://github.com/saturday06/VRM_Addon_for_Blender/).
+This project would not be possible without [saturday06/VRM_Addon_for_Blender](https://github.com/saturday06/VRM_Addon_for_Blender/) nor [technistguru/MagicaVoxel_Importer](https://github.com/technistguru/MagicaVoxel_Importer)
+
+
 This project is licensed under the GPL v3.0 License - see the [LICENSE](LICENSE) file for details

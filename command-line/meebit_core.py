@@ -606,12 +606,16 @@ def import_meebit_vox_addons(path, bodyMesh,options):
             booleanModifier.operation = 'DIFFERENCE'
             bpy.ops.object.modifier_apply(modifier=booleanModifier.name)
 
-        # Do the join
-        bpy.ops.object.select_all(action='DESELECT')
-        addonMesh.select_set(True)
-        bodyMesh.select_set(True)
-        bpy.context.view_layer.objects.active = bodyMesh
-        bpy.ops.object.join()
+        if addonMesh:
+            # Do the join
+            bpy.ops.object.select_all(action='DESELECT')
+            addonMesh.select_set(True)
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
+            bpy.ops.object.join()
+        else:
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
 
         # Only execute if there is an armature as parent to the body mesh
         if bodyMesh.parent:
@@ -656,7 +660,7 @@ def import_meebit_vox(path, options):
         file_size = os.path.getsize(path)
         
         palette = []
-        materials = [[0.5, 0.0, 0.0, 0.0] for _ in range(255)] # [roughness, metallic, glass, emission] * 255
+        materials = [[1.0, 0.0, 0.0, 0.0] for _ in range(255)] # [roughness, metallic, glass, emission] * 255
         
         # Makes sure it's supported vox file
         assert (struct.unpack('<4ci', file.read(8)) == (b'V', b'O', b'X', b' ', 150))
@@ -801,8 +805,9 @@ def import_meebit_vox(path, options):
             
             bsdf = nodes["Principled BSDF"]
             bsdf.inputs["Base Color"].default_value = col
-            
-            bsdf.inputs["Roughness"].default_value = materials[id][0]
+
+            # Force 1.0 roughness to avoid specular highlights
+            bsdf.inputs["Roughness"].default_value = 1.0
             bsdf.inputs["Metallic"].default_value = materials[id][1]
             bsdf.inputs["Transmission"].default_value = materials[id][2]
             bsdf.inputs["Emission Strength"].default_value = materials[id][3] * 20

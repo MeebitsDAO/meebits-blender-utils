@@ -260,7 +260,7 @@ class VoxelObject:
         #obj.location.y = obj.location.y - vox_size*obj.dimensions.y/2.0
         # Object dimension for head might be different, so let's hardcode all the things
         #TODO: Will likely impact t-pose
-        obj.location.y = obj.location.y - 0.25
+        obj.location.y = obj.location.y - 0.65
         #print(f'5 Object location {obj.location.x}, {obj.location.y},{obj.location.z}')
 
 
@@ -591,24 +591,31 @@ def import_meebit_vox_addons(path, bodyMesh,options):
         print("Processing add-on file " + addonFile )
         addonMesh = import_meebit_vox(addonFile,options)
 
-        # Before joining, we need to make sure there is no overlapping voxels.
-        # We do this by creating a boolean modifier with the add-on
-        bodyMesh= bpy.data.objects['00001_MALE_BODY_VRM']
-        bodyMesh.select_set(True)
-        bpy.context.view_layer.objects.active = bodyMesh
-        addonMesh= bpy.data.objects['00001_MALE_BODY_VRM_addon_head']
-        addonMesh.select_set(False)
-        booleanModifier = bodyMesh.modifiers.new(name='booly_'+addonMesh.name, type='BOOLEAN')
-        booleanModifier.object = addonMesh
-        booleanModifier.operation = 'DIFFERENCE'
-        bpy.ops.object.modifier_apply(modifier=booleanModifier.name)
+        # Disabling Blender boolean operations since we are now handling in the vox files themselves
+        if False:
+            # Before joining, we need to make sure there is no overlapping voxels.
+            # We do this by creating a boolean modifier with the add-on
+            # bodyMesh= bpy.data.objects['00001_MALE_BODY_VRM']
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
+            # addonMesh= bpy.data.objects['00001_MALE_BODY_VRM_addon_head']
+            addonMesh.select_set(False)
+            print("Addon mesh name: "+addonMesh.name)
+            booleanModifier = bodyMesh.modifiers.new(name='booly_'+addonMesh.name, type='BOOLEAN')
+            booleanModifier.object = addonMesh
+            booleanModifier.operation = 'DIFFERENCE'
+            bpy.ops.object.modifier_apply(modifier=booleanModifier.name)
 
-        # Do the join
-        bpy.ops.object.select_all(action='DESELECT')
-        addonMesh.select_set(True)
-        bodyMesh.select_set(True)
-        bpy.context.view_layer.objects.active = bodyMesh
-        bpy.ops.object.join()
+        if addonMesh:
+            # Do the join
+            bpy.ops.object.select_all(action='DESELECT')
+            addonMesh.select_set(True)
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
+            bpy.ops.object.join()
+        else:
+            bodyMesh.select_set(True)
+            bpy.context.view_layer.objects.active = bodyMesh
 
         # Only execute if there is an armature as parent to the body mesh
         if bodyMesh.parent:
@@ -653,7 +660,7 @@ def import_meebit_vox(path, options):
         file_size = os.path.getsize(path)
         
         palette = []
-        materials = [[0.5, 0.0, 0.0, 0.0] for _ in range(255)] # [roughness, metallic, glass, emission] * 255
+        materials = [[1.0, 0.0, 0.0, 0.0] for _ in range(255)] # [roughness, metallic, glass, emission] * 255
         
         # Makes sure it's supported vox file
         assert (struct.unpack('<4ci', file.read(8)) == (b'V', b'O', b'X', b' ', 150))
@@ -798,8 +805,9 @@ def import_meebit_vox(path, options):
             
             bsdf = nodes["Principled BSDF"]
             bsdf.inputs["Base Color"].default_value = col
-            
-            bsdf.inputs["Roughness"].default_value = materials[id][0]
+
+            # Force 1.0 roughness to avoid specular highlights
+            bsdf.inputs["Roughness"].default_value = 1.0
             bsdf.inputs["Metallic"].default_value = materials[id][1]
             bsdf.inputs["Transmission"].default_value = materials[id][2]
             bsdf.inputs["Emission Strength"].default_value = materials[id][3] * 20

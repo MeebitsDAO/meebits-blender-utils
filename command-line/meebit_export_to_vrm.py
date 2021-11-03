@@ -107,7 +107,7 @@ options.voxel_size=.025
 options.optimize_import_for_type='VRM'
 #options.material_type='Tex'
 options.mtoon_shader= True
-options.shade_smooth_meebit= True
+options.shade_smooth_meebit= False
 options.gamma_correct= True
 options.gamma_value= 2.2
 options.override_materials = False
@@ -142,18 +142,20 @@ print(f'Meebit id from filename is {meebitId}')
 
 try:
     # Do screenscraping from ll site for owner wallet
-    print(f'Making HTTP request to https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
-    response = requests.get(f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
-    ownerWallet = re.search('account.address=([^"]*)',response.text).group(1)
+    # print(f'Making HTTP request to https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
+    # response = requests.get(f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}')
+    # ownerWallet = re.search('account.address=([^"]*)',response.text).group(1)
+
+    meebitUrl = f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}'
 
     # Set these values in blender for the VRM export add-on to include them
     meebitArmature = bpy.data.objects['MeebitArmature']
     meebitArmature['version'] = '0.9.3'  # matches the meebit blender add-on version
-    meebitArmature['author'] = ownerWallet # wallet id for the owner when the VRM was created
-    meebitArmature['contactInformation'] = f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}' # To be update to metaverse sign-up info
+    meebitArmature['author'] = meebitUrl # wallet id for the owner when the VRM was created
+    meebitArmature['contactInformation'] = meebitUrl # To be update to metaverse sign-up info
     meebitArmature['reference'] = 'https://meebitsdao.world/' # meebits dao promotion
     meebitArmature['title'] = f'Meebit #{meebitId}' # meebit number reference
-    meebitArmature['otherPermissionUrl'] = f'https://meebits.larvalabs.com/meebits/detail?index={meebitId}'  # meebit url
+    meebitArmature['otherPermissionUrl'] = meebitUrl  # meebit url
     meebitArmature['otherLicenseUrl'] = 'https://meebits.larvalabs.com/meebits/termsandconditions' # meebits terms and conditions
     # Leave default value of these for now
     # meebitArmature['allowedUserName': 'OnlyAuthor']
@@ -165,18 +167,19 @@ except Exception as e:
     print("Failed to set VRM metadata")
     print(e)
 
-exportFilename = fileNameNoEnding+ '.vrm'
+exportFilename = fileNameNoEnding.replace("_vrm", "")+ '.vrm'
 bpy.ops.export_scene.vrm('EXEC_DEFAULT', filepath=exportFilename)
 print("Meebit VRM successfully written to " + exportFilename)
 
-try:
-    #Get photo as well
-    print(f'Making HTTP request to https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
-    response = requests.get(f'https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
-    with open(fileNameNoEnding+ '.jpg',"wb") as file:
-        file.write(response.content)
-except Exception as e:
-    print("Failed to set VRM metadata")
-    print(e)
+if False:
+    try:
+        #Get photo as well
+        print(f'Making HTTP request to https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
+        response = requests.get(f'https://meebits.larvalabs.com/meebitimages/characterimage?index={meebitId}&type=full')
+        with open(fileNameNoEnding+ '.jpg',"wb") as file:
+            file.write(response.content)
+    except Exception as e:
+        print("Failed to set VRM metadata")
+        print(e)
 
-print("Don't forget to follow @MeebitsDAO")
+    print("Don't forget to follow @MeebitsDAO")
